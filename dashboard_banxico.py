@@ -257,22 +257,25 @@ with abajo_izq:
     st.pyplot(fig)
 
 with abajo_der:
-    st.subheader("Promedio por mes y año")
-    calor = principal.pivot_table(index="Anio", columns="Mes",
-                                  values="Valor", aggfunc="mean")
+    st.subheader("Volatilidad a lo largo del tiempo")
+    # Desviación estándar de la variación diaria en una ventana móvil.
+    # A diferencia del boxplot anual, señala las fechas exactas
+    # en que la serie estuvo más inestable.
+    ventana = max(suavizado, 5)
+    principal["Volatilidad"] = principal["Variacion"].rolling(ventana).std()
+    promedio_vol = principal["Volatilidad"].mean()
 
     fig, ax = plt.subplots(figsize=(6, 3.4))
-    imagen = ax.imshow(calor, cmap="YlGnBu", aspect="auto")
-    fig.colorbar(imagen, ax=ax)
-    ax.set_xticks(range(len(calor.columns)))
-    ax.set_xticklabels(["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul",
-                        "Ago", "Sep", "Oct", "Nov", "Dic"][:len(calor.columns)])
-    ax.set_yticks(range(len(calor.index)))
-    ax.set_yticklabels(calor.index)
-    ax.grid(False)
+    ax.plot(principal["Fecha"], principal["Volatilidad"],
+            color=ROJO, linewidth=1.5, label=f"Volatilidad ({ventana} días)")
+    ax.axhline(promedio_vol, color="gray", linewidth=0.8, linestyle="--",
+               label="Promedio del periodo")
+    ax.set_xlabel("Fecha")
+    ax.set_ylabel("Desviación estándar (%)")
+    ax.legend(frameon=False)
     st.pyplot(fig)
-    st.caption("Escala secuencial: el valor tiene orden pero no un cero "
-               "con significado, así que no va divergente.")
+    st.caption("Los picos por encima de la línea punteada son episodios de "
+               "nerviosismo: días en que la serie se movió más de lo normal.")
 
 
 # ─── Datos ─────────────────────────────────────────────────────────────
